@@ -2,7 +2,8 @@
 #define DLL_HPP
 
 class doublyLinkedList {
-private:
+
+public:
     struct Node {
         int data;
         Node* prev;
@@ -11,11 +12,13 @@ private:
     };
     Node* head;
     Node* tail;
-
-public:
     doublyLinkedList();
     void insertAtHead(Node* node);
     void deleteNode(Node* node);
+
+  
+    
+
 };
 
 #endif // DLL_HPP
