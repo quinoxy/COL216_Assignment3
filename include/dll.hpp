@@ -5,10 +5,10 @@ class doublyLinkedList {
 
 public:
     struct Node {
-        int data;
+        unsigned data;
         Node* prev;
         Node* next;
-        Node(int value);
+        Node(unsigned value);
     };
     Node* head;
     Node* tail;

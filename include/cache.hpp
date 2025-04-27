@@ -5,51 +5,51 @@
 #include <map>
 #include <utility>
 #include "dll.hpp"
-int DEFAULT_CACHE_LINES_PER_SET = 2;
-int DEFAULT_LINE_SIZE = 32;
-int DEFAULT_LINE_SIZE_BITS = 5;
-int DEFAULT_SETS_PER_CACHE = 64;
-int DEFAULT_SET_BITS = 6;
+unsigned DEFAULT_CACHE_LINES_PER_SET = 2;
+unsigned DEFAULT_LINE_SIZE = 32;
+unsigned DEFAULT_LINE_SIZE_BITS = 5;
+unsigned DEFAULT_SETS_PER_CACHE = 64;
+unsigned DEFAULT_SET_BITS = 6;
 
 enum cacheLineLabel {M,E,S,I};
 
 class cacheLine{
 private:
-    int size_bits;
+    unsigned size_bits;
 
 public:
-    int tag;
+    unsigned tag;
     cacheLineLabel state;
     bool valid;
 
-    cacheLine(int s);
+    cacheLine(unsigned s);
 };
 
 
 class cacheSet{
 
-    int lineCount;
+    unsigned lineCount;
     std::vector<cacheLine> lines;
-    int lineSizeBits;
-    int currentCapacity;
+    unsigned lineSizeBits;
+    unsigned currentCapacity;
     doublyLinkedList LRUMem;
-    std::map<int,doublyLinkedList::Node*> mapForLRU;
+    std::map<unsigned,doublyLinkedList::Node*> mapForLRU;
 
 
-    cacheSet(int cacheLinesPerSet = DEFAULT_CACHE_LINES_PER_SET, int lineSizeBits = DEFAULT_LINE_SIZE_BITS);
-    bool isMiss(int tag);
-    void addTag(int tag, cacheLineLabel s);
+    cacheSet(unsigned cacheLinesPerSet = DEFAULT_CACHE_LINES_PER_SET, unsigned lineSizeBits = DEFAULT_LINE_SIZE_BITS);
+    bool isMiss(unsigned tag);
+    void addTag(unsigned tag, cacheLineLabel s);
 
 };
 
 class cache{
-    int setCount;
+    unsigned setCount;
     std::vector<cacheSet> sets;
-    int lineSizeBits;
-    int associativity;
-    int setBits;
+    unsigned lineSizeBits;
+    unsigned associativity;
+    unsigned setBits;
 public:
-    cache(int lineSizeBits=DEFAULT_LINE_SIZE_BITS, int associativity=DEFAULT_CACHE_LINES_PER_SET, int setBits=DEFAULT_SET_BITS);
+    cache(unsigned lineSizeBits=DEFAULT_LINE_SIZE_BITS, unsigned associativity=DEFAULT_CACHE_LINES_PER_SET, unsigned setBits=DEFAULT_SET_BITS);
 
 };
 #endif

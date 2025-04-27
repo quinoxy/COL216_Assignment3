@@ -22,4 +22,4 @@ void doublyLinkedList::deleteNode(Node* node){
     delete node;
 }
 
-doublyLinkedList::Node::Node(int value) : data(value), next(nullptr), prev(nullptr) {}
+doublyLinkedList::Node::Node(unsigned value) : data(value), next(nullptr), prev(nullptr) {}
