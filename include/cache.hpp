@@ -12,6 +12,17 @@ unsigned DEFAULT_SETS_PER_CACHE = 64;
 unsigned DEFAULT_SET_BITS = 6;
 
 enum cacheLineLabel {M,E,S,I};
+enum busTransactionType{
+    Rd,
+    RdX,
+    WriteInvalidate,
+    None
+};
+
+struct busTransaction {
+    busTransactionType type;
+    unsigned value;
+};
 
 class cacheLine{
 private:
@@ -35,10 +46,10 @@ class cacheSet{
     doublyLinkedList LRUMem;
     std::map<unsigned,doublyLinkedList::Node*> mapForLRU;
 
-
+public:
     cacheSet(unsigned cacheLinesPerSet = DEFAULT_CACHE_LINES_PER_SET, unsigned lineSizeBits = DEFAULT_LINE_SIZE_BITS);
-    bool isMiss(unsigned tag);
-    void addTag(unsigned tag, cacheLineLabel s);
+    bool isMiss(unsigned tag, bool LRUUpdate);
+    cacheLine addTag(unsigned tag, cacheLineLabel s);
 
 };
 
@@ -48,8 +59,9 @@ class cache{
     unsigned lineSizeBits;
     unsigned associativity;
     unsigned setBits;
-    std::vector<std::pair<unsigned int, bool>> instructions;
+    std::vector<std::pair<std::pair<unsigned int, bool>,bool>> instructions;
     unsigned readInstrs;
+    unsigned PC;
     unsigned executionCycles;
     unsigned idleCycles;
     unsigned misses;
@@ -57,10 +69,28 @@ class cache{
     unsigned writebacks;
     unsigned invalidations;
     unsigned byteTraffic;
-    
+    busTransaction fromCacheToBus;
+    unsigned arrivedMemBuffer;
+    bool memArrivedInCycle;
+    unsigned sendMemBuffer;
+    busTransaction snoop;
+
+
+
+
 
 public:
-    cache(unsigned lineSizeBits=DEFAULT_LINE_SIZE_BITS, unsigned associativity=DEFAULT_CACHE_LINES_PER_SET, unsigned setBits=DEFAULT_SET_BITS, std::vector<std::pair<unsigned int, bool>> instructions);
+    cache(unsigned lineSizeBits=DEFAULT_LINE_SIZE_BITS, unsigned associativity=DEFAULT_CACHE_LINES_PER_SET, unsigned setBits=DEFAULT_SET_BITS, std::vector<std::pair<std::pair<unsigned int, bool>,bool>> instructions);
+    void processCycle();
+    void processInst();
+    void processSnoop();
+
+};
+
+class Bus{
+    unsigned state;
+    unsigned cyclesBusy;
+
 
 };
 #endif
