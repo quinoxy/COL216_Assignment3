@@ -10,38 +10,40 @@ cacheSet::cacheSet(unsigned cacheLinesPerSet, unsigned lineSizeBits): lineCount(
     }
 }
 
-bool cacheSet::isMiss(unsigned tag){
+bool cacheSet::isMiss(unsigned tag, bool LRUUpdate){
     
     for (const auto& line : lines) {
-        if (line.valid && line.tag == tag) {
-            doublyLinkedList::Node * newNode = mapForLRU[tag];
-            LRUMem.deleteNode(newNode);
-            LRUMem.insertAtHead(newNode);
+        if (line.valid && line.tag == tag && line.state!=I) {
+            if (LRUUpdate) {
+                doublyLinkedList::Node * newNode = mapForLRU[tag];
+                LRUMem.deleteNode(newNode);
+                LRUMem.insertAtHead(newNode);
+            }
             return false;  
         }
     }
     return true;
 }
 
-void cacheSet::addTag(unsigned tag, cacheLineLabel s){
+cacheLine cacheSet::addTag(unsigned tag, cacheLineLabel s){
     //check if there are any invalid lines in the set, using indexes and place tag there
     
     
     for (size_t i = 0; i < lines.size(); ++i) {
         if (!lines[i].valid || lines[i].state == I) {
-
+            cacheLine initialLine = lines[i];
             lines[i].tag = tag;
             lines[i].valid = true;
             lines[i].state = s;
 
             mapForLRU[tag] = new doublyLinkedList::Node(i);
             LRUMem.insertAtHead(mapForLRU[tag]);
-            return;
+            return initialLine;
 
         }else{
 
             doublyLinkedList::Node* toBeDeleted = LRUMem.tail->prev;
-
+            cacheLine toBeDeletedLine = lines[toBeDeleted->data];
             mapForLRU.erase(lines[toBeDeleted->data].tag);
             LRUMem.deleteNode(toBeDeleted);
 
@@ -53,15 +55,54 @@ void cacheSet::addTag(unsigned tag, cacheLineLabel s){
             mapForLRU[tag] = new doublyLinkedList::Node(i);
             LRUMem.insertAtHead(mapForLRU[tag]);
 
-            return;
+            return toBeDeletedLine;
 
         }
     }
 }
 
-cache::cache(unsigned lineSizeBits, unsigned associativity, unsigned setBits, std::vector<std::pair<unsigned int, bool>> instructions) 
-    : setCount(1<<setBits),lineSizeBits(lineSizeBits), associativity(associativity), setBits(setBits), instructions(instructions) {
+cache::cache(unsigned lineSizeBits, unsigned associativity, unsigned setBits, std::vector<std::pair<std::pair<unsigned int, bool>,bool>> instructions)
+    : setCount(1<<setBits),lineSizeBits(lineSizeBits), associativity(associativity), setBits(setBits), instructions(instructions), PC(0) ,readInstrs(0), executionCycles(0), idleCycles(0), misses(0), evictions(0), writebacks(0), invalidations(0), byteTraffic(0), arrivedMemBuffer(0), memArrivedInCycle(false), sendMemBuffer(0) {
     for (unsigned i = 0; i < setCount; ++i) {
         sets.emplace_back(associativity, lineSizeBits);
-    }        
+    }    
+    fromCacheToBus = {busTransactionType::None, 0}; 
+    snoop = {busTransactionType::None, 0};
+    
+
 }
+
+void cache::processInst(){
+    if (PC >= instructions.size()) {
+        return;
+    }
+
+    auto instruction = instructions[PC];
+    unsigned address = instruction.first.first;
+    bool isWrite = instruction.first.second;
+    bool alreadyProcessed = instruction.second;
+    if(!alreadyProcessed){
+        instructions[PC].second = true;
+        if (!isWrite) readInstrs++;
+        executionCycles++;
+
+
+        unsigned tag = address >> lineSizeBits;
+        unsigned setIndex = (address >> lineSizeBits) & (setCount - 1);
+        cacheSet& currentSet = sets[setIndex];
+        bool miss = false;
+        if (currentSet.isMiss(tag, true)) {
+            miss=true;
+            misses++;
+        }
+        if(!miss && !isWrite){
+            PC++;
+            return;
+        }
+        if(!miss && isWrite){        }
+
+
+    }
+}
+
+
