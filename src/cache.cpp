@@ -59,8 +59,8 @@ void cacheSet::addTag(unsigned tag, cacheLineLabel s){
     }
 }
 
-cache::cache(unsigned lineSizeBits, unsigned associativity, unsigned setBits) 
-    : setCount(1<<setBits),lineSizeBits(lineSizeBits), associativity(associativity), setBits(setBits) {
+cache::cache(unsigned lineSizeBits, unsigned associativity, unsigned setBits, std::vector<std::pair<unsigned int, bool>> instructions) 
+    : setCount(1<<setBits),lineSizeBits(lineSizeBits), associativity(associativity), setBits(setBits), instructions(instructions) {
     for (unsigned i = 0; i < setCount; ++i) {
         sets.emplace_back(associativity, lineSizeBits);
     }        

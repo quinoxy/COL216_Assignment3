@@ -48,8 +48,19 @@ class cache{
     unsigned lineSizeBits;
     unsigned associativity;
     unsigned setBits;
+    std::vector<std::pair<unsigned int, bool>> instructions;
+    unsigned readInstrs;
+    unsigned executionCycles;
+    unsigned idleCycles;
+    unsigned misses;
+    unsigned evictions;
+    unsigned writebacks;
+    unsigned invalidations;
+    unsigned byteTraffic;
+    
+
 public:
-    cache(unsigned lineSizeBits=DEFAULT_LINE_SIZE_BITS, unsigned associativity=DEFAULT_CACHE_LINES_PER_SET, unsigned setBits=DEFAULT_SET_BITS);
+    cache(unsigned lineSizeBits=DEFAULT_LINE_SIZE_BITS, unsigned associativity=DEFAULT_CACHE_LINES_PER_SET, unsigned setBits=DEFAULT_SET_BITS, std::vector<std::pair<unsigned int, bool>> instructions);
 
 };
 #endif
