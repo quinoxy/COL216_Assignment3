@@ -5,33 +5,22 @@
 #include <vector>
 #include <utility>
 
-enum OperationType
-{
-    READ,
-    WRITE
-};
-
-struct MemoryOperation
-{
-    OperationType type;
-    unsigned address;
-};
 
 class InputParser
 {
 public:
     InputParser(int argc, char *argv[]);
-    void parseTraceFile(const std::string &traceFileName, std::vector<MemoryOperation> &operations);
+    void parseTraceFile(const std::string &traceFileName, std::vector<std::pair<std::pair<unsigned int, bool>, bool>> &instructions);
 
     unsigned getAssociativity() const;
-    unsigned getBlockBits() const;
+    unsigned getLineSizeBits() const;
     unsigned getSetBits() const;
     std::string getOutputFileName() const;
     std::vector<std::string> getTraceFiles() const;
 
 private:
     unsigned associativity;
-    unsigned blockBits;
+    unsigned lineSizeBits;
     unsigned setBits;
     std::string outputFileName;
     std::vector<std::string> traceFiles;
