@@ -10,7 +10,8 @@ extern const unsigned DEFAULT_LINE_SIZE;
 extern const unsigned DEFAULT_LINE_SIZE_BITS;
 extern const unsigned DEFAULT_SETS_PER_CACHE;
 extern const unsigned DEFAULT_SET_BITS;
-extern const unsigned IF_EVICT_OR_TRANSFER_STALL;
+extern const bool IF_EVICT_OR_TRANSFER_STALL;
+extern const bool DEBUG;
 enum cacheLineLabel
 {
     M,

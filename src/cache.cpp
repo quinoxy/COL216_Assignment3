@@ -7,7 +7,9 @@ const unsigned DEFAULT_LINE_SIZE = 64;
 const unsigned DEFAULT_LINE_SIZE_BITS = 6;
 const unsigned DEFAULT_SETS_PER_CACHE = 64;
 const unsigned DEFAULT_SET_BITS = 6;
-const unsigned IF_EVICT_OR_TRANSFER_STALL = true;
+const bool IF_EVICT_OR_TRANSFER_STALL = true;
+const bool DEBUG = false;
+
 
 cacheLine::cacheLine(unsigned s) : tag(0), state(I), size_bits(s) {}
 
