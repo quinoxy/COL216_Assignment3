@@ -10,7 +10,7 @@ extern const unsigned DEFAULT_LINE_SIZE;
 extern const unsigned DEFAULT_LINE_SIZE_BITS;
 extern const unsigned DEFAULT_SETS_PER_CACHE;
 extern const unsigned DEFAULT_SET_BITS;
-
+extern const unsigned IF_EVICT_OR_TRANSFER_STALL;
 enum cacheLineLabel
 {
     M,
@@ -105,6 +105,7 @@ public:
     busTransaction currentProcessing;
     unsigned busOwner;
     cacheLineLabel typeOfNewLine;
+    bool ifEvictingOrTransferringSelfStall;
 
     bus(cache *cachePtr0, cache *cachePtr1, cache *cachePtr2, cache *cachePtr3);
     void runForACycle();
