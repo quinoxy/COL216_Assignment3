@@ -43,18 +43,9 @@ void Output::printCoreStatistics(const std::vector<cache> &cores)
     }
 }
 
-void Output::printOverallBusSummary(const std::vector<cache> &cores)
+void Output::printOverallBusSummary(const bus &b)
 {
-    unsigned totalBusTransactions = 0;
-    unsigned totalBusTraffic = 0;
-
-    for (const cache &core : cores)
-    {
-        totalBusTransactions += core.getBusTransactions();
-        totalBusTraffic += core.getTrafficBytes();
-    }
-
     std::cout << "Overall Bus Summary:\n";
-    std::cout << "Total Bus Transactions: " << totalBusTransactions << "\n";
-    std::cout << "Total Bus Traffic (Bytes): " << totalBusTraffic << "\n";
+    std::cout << "Total Bus Transactions: " << b.totalTransactions << "\n";
+    std::cout << "Total Bus Traffic (Bytes): " << b.totalTraffic << "\n";
 }
