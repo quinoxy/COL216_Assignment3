@@ -61,6 +61,7 @@ class cache{
         unsigned associativity;
         unsigned setBits;
         std::vector<std::pair<std::pair<unsigned int, bool>,bool>> instructions;
+        bool isHalted;
         unsigned readInstrs;
         unsigned PC;
         unsigned executionCycles;
@@ -84,14 +85,29 @@ public:
     cache(unsigned lineSizeBits=DEFAULT_LINE_SIZE_BITS, unsigned associativity=DEFAULT_CACHE_LINES_PER_SET, unsigned setBits=DEFAULT_SET_BITS, std::vector<std::pair<std::pair<unsigned int, bool>,bool>> instructions);
     void processCycle();
     void processInst();
-    void processSnoop();
+    std::pair<bool, cacheLine> processSnoop(busTransaction trs);
 
 };
 
-class Bus{
-    unsigned state;
-    unsigned cyclesBusy;
+class bus{
+    unsigned from; //where to where write is occuring
+    unsigned to; // where to where data transfer is occuring
+    cache* cachePtrs[4]; //pointers to all the caches
+    unsigned cyclesBusy; // number of cycles the bus is busy
+    unsigned totalTransactions;
+    unsigned totalTraffic;
+    bool currentOpIsEviction;
+    busTransaction currentProcessing;
+    unsigned busOwner;
+    cacheLineLabel typeOfNewLine;
 
 
+
+
+
+
+    bus(cache* cachePtr0, cache* cachePtr1,cache* cachePtr2, cache* cachePtr3);
+    void runForACycle();
+    void transactionOver();
 };
 #endif
