@@ -7,6 +7,7 @@ const unsigned DEFAULT_LINE_SIZE = 64;
 const unsigned DEFAULT_LINE_SIZE_BITS = 6;
 const unsigned DEFAULT_SETS_PER_CACHE = 64;
 const unsigned DEFAULT_SET_BITS = 6;
+const unsigned IF_EVICT_OR_TRANSFER_STALL = true;
 
 cacheLine::cacheLine(unsigned s) : tag(0), state(I), size_bits(s) {}
 
@@ -216,7 +217,7 @@ std::pair<bool, cacheLine> cache::processSnoop(busTransaction trs)
     return {true, ret};
 }
 
-bus::bus(cache *cachePtr0, cache *cachePtr1, cache *cachePtr2, cache *cachePtr3) : from(-1), to(-1), cyclesBusy(0), totalTransactions(0), totalTraffic(0), currentOpIsEviction(false), currentProcessing({busTransactionType::None, 0}), busOwner(-1), typeOfNewLine(I)
+bus::bus(cache *cachePtr0, cache *cachePtr1, cache *cachePtr2, cache *cachePtr3) : from(-1), to(-1), cyclesBusy(0), totalTransactions(0), totalTraffic(0), currentOpIsEviction(false), currentProcessing({busTransactionType::None, 0}), busOwner(-1), typeOfNewLine(I), ifEvictingOrTransferringSelfStall(IF_EVICT_OR_TRANSFER_STALL)
 {
     std::cout << "Initializing bus with 4 caches" << std::endl;
     cachePtrs[0] = cachePtr0;
@@ -247,7 +248,7 @@ void bus::runForACycle()
                 if (from != 4)
                 {
                     std::cout << "Unhalting cache " << from << std::endl;
-                    if(cachePtrs[from]->fromCacheToBus.type == busTransactionType::None) cachePtrs[from]->isHalted = false;
+                    if(ifEvictingOrTransferringSelfStall){if(cachePtrs[from]->fromCacheToBus.type == busTransactionType::None) {cachePtrs[from]->isHalted = false;}}
                 }
                 unsigned tag = currentProcessing.value >> cachePtrs[busOwner]->lineSizeBits;
                 unsigned setIndex = (currentProcessing.value >> cachePtrs[busOwner]->lineSizeBits) & (cachePtrs[busOwner]->setCount - 1);
@@ -260,6 +261,9 @@ void bus::runForACycle()
                     to = 4;
                     currentOpIsEviction = true;
                     cyclesBusy = 100;
+                    if(!ifEvictingOrTransferringSelfStall) {cachePtrs[busOwner]->isHalted = false;
+                        cachePtrs[busOwner] -> fromCacheToBus = {busTransactionType::None, 0};
+                    }
                 }
                 else
                 {
@@ -297,6 +301,9 @@ void bus::runForACycle()
                     to = 4;
                     currentOpIsEviction = true;
                     cyclesBusy = 100;
+                    if(!ifEvictingOrTransferringSelfStall) {cachePtrs[busOwner]->isHalted = false;
+                        cachePtrs[busOwner] -> fromCacheToBus = {busTransactionType::None, 0};
+                    }
                 }
                 else
                 {
@@ -312,7 +319,7 @@ void bus::runForACycle()
             else
             {
                 std::cout << "Fetching data from main memory to owner." << std::endl;
-                if (cachePtrs[from]->fromCacheToBus.type == busTransactionType::None) cachePtrs[from]->isHalted = false;
+                if(ifEvictingOrTransferringSelfStall){if (cachePtrs[from]->fromCacheToBus.type == busTransactionType::None) {cachePtrs[from]->isHalted = false;}}
                 from = 4;
                 to = busOwner;
                 cyclesBusy = 100;
@@ -403,7 +410,7 @@ void bus::runForACycle()
         else if (caseReadMiss == M)
         {
             std::cout << "Read hit on modified line. Fetching from cache " << sender << " to main memory." << std::endl;
-            cachePtrs[sender]->isHalted = true;
+            if(ifEvictingOrTransferringSelfStall)cachePtrs[sender]->isHalted = true;
             from = sender;
             to = 4;
             cyclesBusy = 100;
@@ -412,7 +419,7 @@ void bus::runForACycle()
         else
         {
             std::cout << "Read hit. Fetching from cache " << sender << " to owner." << std::endl;
-            cachePtrs[sender]->isHalted = true;
+            if(ifEvictingOrTransferringSelfStall)cachePtrs[sender]->isHalted = true;
             from = sender;
             to = owner;
             cyclesBusy = 2 * (1 << cachePtrs[sender]->lineSizeBits);
@@ -458,7 +465,7 @@ void bus::runForACycle()
         else
         {
             std::cout << "Write hit on modified line. Fetching from cache " << sender << " to main memory." << std::endl;
-            cachePtrs[sender]->isHalted = true;
+            if(ifEvictingOrTransferringSelfStall)cachePtrs[sender]->isHalted = true;
             from = sender;
             to = 4;
             cyclesBusy = 100;
@@ -470,8 +477,10 @@ void bus::runForACycle()
 void bus::transactionOver()
 {
     std::cout << "Transaction over. Resetting bus state." << std::endl;
-    cachePtrs[busOwner]->isHalted = false;
-    cachePtrs[busOwner]->fromCacheToBus = {busTransactionType::None, 0};
+    if(ifEvictingOrTransferringSelfStall || currentOpIsEviction==false){
+        cachePtrs[busOwner]->isHalted = false;
+        cachePtrs[busOwner]->fromCacheToBus = {busTransactionType::None, 0};
+    }
     busOwner = -1;
     from = -1;
     to = -1;
