@@ -10,19 +10,19 @@ cacheSet::cacheSet(unsigned cacheLinesPerSet, unsigned lineSizeBits): lineCount(
     }
 }
 
-bool cacheSet::isMiss(unsigned tag, bool LRUUpdate){
+std::pair<bool, cacheLine*> cacheSet::isMiss(unsigned tag, bool LRUUpdate){
     
-    for (const auto& line : lines) {
+    for (auto& line : lines) {
         if (line.valid && line.tag == tag && line.state!=I) {
             if (LRUUpdate) {
                 doublyLinkedList::Node * newNode = mapForLRU[tag];
                 LRUMem.deleteNode(newNode);
                 LRUMem.insertAtHead(newNode);
             }
-            return false;  
+            return {false, &line};  
         }
     }
-    return true;
+    return {true,nullptr};
 }
 
 cacheLine cacheSet::addTag(unsigned tag, cacheLineLabel s){
@@ -83,25 +83,43 @@ void cache::processInst(){
     bool alreadyProcessed = instruction.second;
     if(!alreadyProcessed){
         instructions[PC].second = true;
-        if (!isWrite) readInstrs++;
-        executionCycles++;
-
-
         unsigned tag = address >> lineSizeBits;
         unsigned setIndex = (address >> lineSizeBits) & (setCount - 1);
         cacheSet& currentSet = sets[setIndex];
         bool miss = false;
-        if (currentSet.isMiss(tag, true)) {
+        auto [isMiss, linePtr] = currentSet.isMiss(tag, true);
+        if (isMiss) {
             miss=true;
-            misses++;
         }
         if(!miss && !isWrite){
             PC++;
             return;
         }
-        if(!miss && isWrite){        }
+        else if(!miss && isWrite){
+            if (linePtr->state = E){
+                linePtr->state=M;
+                PC++;
+            }
+            else if(linePtr->state = S){
+                linePtr->state = M;
+                fromCacheToBus = {busTransactionType::WriteInvalidate, linePtr->tag};
+            }
+            else{
+                PC++;
+            }
+
+        }
+        else if (miss && !isWrite){
+            fromCacheToBus = {busTransactionType::Rd, address};
+        }
+        else if (miss && isWrite){
+
+            fromCacheToBus = {busTransactionType::RdX, address};
+        }
 
 
+    }else{
+        
     }
 }
 

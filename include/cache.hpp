@@ -48,12 +48,13 @@ class cacheSet{
 
 public:
     cacheSet(unsigned cacheLinesPerSet = DEFAULT_CACHE_LINES_PER_SET, unsigned lineSizeBits = DEFAULT_LINE_SIZE_BITS);
-    bool isMiss(unsigned tag, bool LRUUpdate);
+    std::pair<bool, cacheLine*> isMiss(unsigned tag, bool LRUUpdate);
     cacheLine addTag(unsigned tag, cacheLineLabel s);
 
 };
 
 class cache{
+public:
     unsigned setCount;
     std::vector<cacheSet> sets;
     unsigned lineSizeBits;
