@@ -35,25 +35,21 @@ int main(int argc, char* argv[]){
             allCachesCompleted = true;
             cnt++;
             std::cout << "Cycle " << cycleCount << ":\n";
-
+            busObj.runForACycle();
             for (int i = 0; i < 4; ++i) {
-                if (caches[i].PC < caches[i].instructions.size()) {
-                    std::cout << "  Core " << i << " processing instruction at PC = " << caches[i].PC << "\n";
-                    caches[i].processInst();
-                } else {
-                    std::cout << "  Core " << i << " has completed all instructions.\n";
-                }
-
-                // Check if this cache has completed its instructions
                 if (caches[i].PC < caches[i].instructions.size()) {
                     allCachesCompleted = false;
                 }
             }
-            busObj.runForACycle(); // Run bus for a cycle
+             // Run bus for a cycle
             
 
+            if (allCachesCompleted) {
+                std::cout << "All caches have completed their instructions." << std::endl;
+            }
+
             cycleCount++;
-            if(cnt==150)break;
+            //if(cnt==150)break;
         }
 
         std::cout << "Simulation completed in " << cycleCount << " cycles.\n";

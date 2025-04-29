@@ -92,7 +92,7 @@ void cache::processInst()
         std::cout << "All instructions processed. Halting." << std::endl;
         return;
     }
-    if (!isHalted && fromCacheToBus.type == busTransactionType::None)
+    if (!isHalted)
     {
         auto instruction = instructions[PC];
 
@@ -233,7 +233,7 @@ void bus::runForACycle()
     {
         std::cout << "Bus is busy. Decrementing cyclesBusy to " << (cyclesBusy - 1) << std::endl;
         cyclesBusy--;
-        return;
+        
     }
     else if (cyclesBusy == 1)
     {
@@ -247,7 +247,7 @@ void bus::runForACycle()
                 if (from != 4)
                 {
                     std::cout << "Unhalting cache " << from << std::endl;
-                    cachePtrs[from]->isHalted = false;
+                    if(cachePtrs[from]->fromCacheToBus.type == busTransactionType::None) cachePtrs[from]->isHalted = false;
                 }
                 unsigned tag = currentProcessing.value >> cachePtrs[busOwner]->lineSizeBits;
                 unsigned setIndex = (currentProcessing.value >> cachePtrs[busOwner]->lineSizeBits) & (cachePtrs[busOwner]->setCount - 1);
@@ -312,12 +312,16 @@ void bus::runForACycle()
             else
             {
                 std::cout << "Fetching data from main memory to owner." << std::endl;
-                cachePtrs[from]->isHalted = false;
+                if (cachePtrs[from]->fromCacheToBus.type == busTransactionType::None) cachePtrs[from]->isHalted = false;
                 from = 4;
                 to = busOwner;
                 cyclesBusy = 100;
             }
         }
+    }
+
+    for (unsigned cacheNumber = 0; cacheNumber<4; cacheNumber ++){
+        cachePtrs[cacheNumber]->processInst();
     }
 
     if (cyclesBusy != 0)
