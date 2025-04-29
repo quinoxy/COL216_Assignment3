@@ -2,8 +2,11 @@
 #include "cache.hpp"
 #include <iostream>
 #include <vector>
-int main(int argc, char* argv[]){
-    try {
+
+int main(int argc, char *argv[])
+{
+    try
+    {
         // Parse input using InputParser
         InputParser parser(argc, argv);
 
@@ -12,16 +15,18 @@ int main(int argc, char* argv[]){
         unsigned blockBits = parser.getLineSizeBits();
         unsigned setBits = parser.getSetBits();
         std::vector<std::string> traceFiles = parser.getTraceFiles();
-        
+
         // Parse trace files for each core
         std::vector<std::vector<std::pair<std::pair<unsigned int, bool>, bool>>> instructionsPerCore(4);
-        for (int i = 0; i < 4; ++i) {
+        for (int i = 0; i < 4; ++i)
+        {
             parser.parseTraceFile(traceFiles[i], instructionsPerCore[i]);
         }
 
         // Initialize caches for each core
         std::vector<cache> caches;
-        for (int i = 0; i < 4; ++i) {
+        for (int i = 0; i < 4; ++i)
+        {
             caches.emplace_back(blockBits, associativity, setBits, instructionsPerCore[i]);
         }
         // Initialize bus
@@ -31,31 +36,48 @@ int main(int argc, char* argv[]){
         bool allCachesCompleted = false;
         unsigned cycleCount = 0;
         int cnt = 0;
-        while (!allCachesCompleted) {
+        while (!allCachesCompleted)
+        {
+            std::cout << "";
+            if (DEBUG)
+            {
+                std::cout << "Cycle " << cycleCount << ":\n";
+            }
             allCachesCompleted = true;
             cnt++;
-            std::cout << "Cycle " << cycleCount << ":\n";
             busObj.runForACycle();
-            for (int i = 0; i < 4; ++i) {
-                if (caches[i].PC < caches[i].instructions.size()) {
+            for (int i = 0; i < 4; ++i)
+            {
+                if (caches[i].PC < caches[i].instructions.size())
+                {
                     allCachesCompleted = false;
                 }
             }
-             // Run bus for a cycle
-            
+            // Run bus for a cycle
 
-            if (allCachesCompleted) {
-                std::cout << "All caches have completed their instructions." << std::endl;
+            if (allCachesCompleted)
+            {
+                if (DEBUG)
+                {
+                    std::cout << "All caches have completed their instructions." << std::endl;
+                }
             }
 
             cycleCount++;
-            //if(cnt==150)break;
+            // if(cnt==150)break;
         }
 
-        std::cout << "Simulation completed in " << cycleCount << " cycles.\n";
-
-    } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << "\n";
+        if (DEBUG)
+        {
+            std::cout << "Simulation completed in " << cycleCount << " cycles.\n";
+        }
+    }
+    catch (const std::exception &e)
+    {
+        if (DEBUG)
+        {
+            std::cerr << "Error: " << e.what() << "\n";
+        }
         return 1;
     }
 
