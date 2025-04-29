@@ -54,26 +54,27 @@ public:
 };
 
 class cache{
-    unsigned setCount;
-    std::vector<cacheSet> sets;
-    unsigned lineSizeBits;
-    unsigned associativity;
-    unsigned setBits;
-    std::vector<std::pair<std::pair<unsigned int, bool>,bool>> instructions;
-    unsigned readInstrs;
-    unsigned PC;
-    unsigned executionCycles;
-    unsigned idleCycles;
-    unsigned misses;
-    unsigned evictions;
-    unsigned writebacks;
-    unsigned invalidations;
-    unsigned byteTraffic;
-    busTransaction fromCacheToBus;
-    unsigned arrivedMemBuffer;
-    bool memArrivedInCycle;
-    unsigned sendMemBuffer;
-    busTransaction snoop;
+    public:
+        unsigned setCount;
+        std::vector<cacheSet> sets;
+        unsigned lineSizeBits;
+        unsigned associativity;
+        unsigned setBits;
+        std::vector<std::pair<std::pair<unsigned int, bool>,bool>> instructions;
+        unsigned readInstrs;
+        unsigned PC;
+        unsigned executionCycles;
+        unsigned idleCycles;
+        unsigned misses;
+        unsigned evictions;
+        unsigned writebacks;
+        unsigned invalidations;
+        unsigned byteTraffic;
+        busTransaction fromCacheToBus;
+        unsigned arrivedMemBuffer;
+        bool memArrivedInCycle;
+        unsigned sendMemBuffer;
+        busTransaction snoop;
 
 
 
