@@ -7,7 +7,7 @@ const unsigned DEFAULT_LINE_SIZE = 64;
 const unsigned DEFAULT_LINE_SIZE_BITS = 6;
 const unsigned DEFAULT_SETS_PER_CACHE = 64;
 const unsigned DEFAULT_SET_BITS = 6;
-const bool IF_EVICT_OR_TRANSFER_STALL = true;
+const bool IF_EVICT_OR_TRANSFER_STALL = false;
 const bool DEBUG = true;
 
 cacheLine::cacheLine(unsigned s) : tag(0), state(I), size_bits(s) {}
@@ -401,10 +401,10 @@ void bus::runForACycle()
             {
                 if (DEBUG)
                 {
-                    std::cout << "Fetching data from main memory to owner." << std::endl;
+                    std::cout << "Fetching data from modified memory to owner." << std::endl;
                 }
                 to = busOwner;
-                cyclesBusy = 2 * (1 << cachePtrs[busOwner]->lineSizeBits);
+                cyclesBusy = 2 * (1 << (cachePtrs[busOwner]->lineSizeBits-2));
                 typeOfNewLine = S;
                 currentOpIsEviction = false;
             }
@@ -472,7 +472,7 @@ void bus::runForACycle()
                 {
                     if (cachePtrs[from]->fromCacheToBus.type == busTransactionType::None)
                     {
-                        cachePtrs[from]->isHalted = false;
+                        cachePtrs[from]->isHalted = true;
                     }
                 }
                 from = 4;
@@ -498,6 +498,15 @@ void bus::runForACycle()
             if (cachePtrs[cache] -> fromCacheToBus.type != busTransactionType::None && cache!=busOwner && cachePtrs[cache]->PC < cachePtrs[cache]->instructions.size())
             {
                 cachePtrs[cache] -> idleCycles ++;
+                if (DEBUG) {
+
+                    std::cout << "Cache " << cache << " is idle. Idle cycles: " << cachePtrs[cache]->idleCycles << std::endl;
+                }
+                else if (cache!=busOwner){
+                    if(DEBUG){
+                        std::cout<< "Non- stalled cache " << cache << " has transaction type " << cachePtrs[cache]->fromCacheToBus.type <<" and PC = "<< cachePtrs[cache]->PC<<" and isHalted = "<< cachePtrs[cache]->isHalted << std::endl;
+                    }
+                }
             }
         }
 
@@ -531,6 +540,15 @@ void bus::runForACycle()
             if (cachePtrs[cache] -> fromCacheToBus.type != busTransactionType::None && cache!=owner && cachePtrs[cache]->PC < cachePtrs[cache]->instructions.size())
             {
                 cachePtrs[cache] -> idleCycles ++;
+                if (DEBUG) {
+
+                    std::cout << "Cache " << cache << " is idle. Idle cycles: " << cachePtrs[cache]->idleCycles << std::endl;
+                }
+            }
+            else if (cache!=owner){
+                if(DEBUG){
+                    std::cout<< "Non- stalled cache " << cache << " has transaction type " << cachePtrs[cache]->fromCacheToBus.type <<" and PC = "<< cachePtrs[cache]->PC<<" and isHalted = "<< cachePtrs[cache]->isHalted << std::endl;
+                }
             }
         }
     }
@@ -632,7 +650,7 @@ void bus::runForACycle()
                 cachePtrs[sender]->isHalted = true;
             from = sender;
             to = owner;
-            cyclesBusy = 2 * (1 << cachePtrs[sender]->lineSizeBits);
+            cyclesBusy = 2 * (1 << (cachePtrs[sender]->lineSizeBits - 2));
             totalTraffic += 1 << cachePtrs[owner]->lineSizeBits;
             typeOfNewLine = S;
             cachePtrs[owner]->byteTraffic += 1 << cachePtrs[owner]->lineSizeBits;
