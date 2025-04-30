@@ -52,10 +52,11 @@ class cacheSet
     std::vector<cacheLine> lines;
     unsigned lineSizeBits;
     unsigned currentCapacity;
+public:
     doublyLinkedList LRUMem;
     std::map<unsigned, doublyLinkedList::Node *> mapForLRU;
 
-public:
+
     cacheSet(unsigned cacheLinesPerSet = DEFAULT_CACHE_LINES_PER_SET, unsigned lineSizeBits = DEFAULT_LINE_SIZE_BITS);
     std::pair<bool, cacheLine *> isMiss(unsigned tag, bool LRUUpdate);
     cacheLine addTag(unsigned tag, cacheLineLabel s);
@@ -85,6 +86,7 @@ public:
     bool memArrivedInCycle;
     unsigned sendMemBuffer;
     busTransaction snoop;
+    unsigned ranForCycles;
 
 public:
     cache(unsigned lineSizeBits = DEFAULT_LINE_SIZE_BITS, unsigned associativity = DEFAULT_CACHE_LINES_PER_SET, unsigned setBits = DEFAULT_SET_BITS, std::vector<std::pair<std::pair<unsigned int, bool>, bool>> instructions = {});

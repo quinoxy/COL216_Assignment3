@@ -8,9 +8,9 @@
 class Output
 {
 public:
-    static void printSimulationParameters(const std::string &tracePrefix, unsigned setBits, unsigned associativity, unsigned blockBits, const cache &cache);
+    static void printSimulationParameters(const std::string &tracePrefix, unsigned setBits, unsigned associativity, unsigned blockBits);
     static void printCoreStatistics(const std::vector<cache> &cores);
-    static void printOverallBusSummary(const std::vector<cache> &cores);
+    static void printOverallBusSummary(const bus &Bus);
 };
 
 #endif // OUTPUT_HPP
