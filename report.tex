@@ -80,21 +80,21 @@
 \subsection{\texttt{bus::runForACycle}} : 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.7\textwidth]{Screenshot 2025-04-30 221603.png}
+  \includegraphics[width=0.7\textwidth]{runForACycle.png}
   \caption{\texttt{bus::runForACycle} work-flow}
   \label{fig:arch}
 \end{figure}
 \subsection{\texttt{cache::processSnoop}} :
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.7\textwidth]{Screenshot 2025-04-30 221613.png}
+  \includegraphics[width=0.7\textwidth]{processSnoop.png}
   \caption{\texttt{cache::processSnoop} work-flow}
   \label{fig:arch}
 \end{figure}
 \subsection{\texttt{cache::processInst}} :
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.7\textwidth]{Screenshot 2025-04-30 222507.png}
+  \includegraphics[width=0.7\textwidth]{processInst.png}
   \caption{\texttt{cache::processInst} work-flow}
   \label{fig:arch}
 \end{figure}
@@ -124,7 +124,7 @@ We fixed associativity at 2 and setSizeBits at 6 and varied setBits from 2 to 6 
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.7\textwidth]{plot_vary_b.png}
-  \caption{Varying set bits}
+  \caption{Varying line size bits}
   \label{fig:arch}
 \end{figure}
 As the amount of bits per cache line increase, the locality of running program gets better, i.e, if I got hit on me and then my neighbouring word is called down the line, I would not hit in case the number of set bits is lesser, but would hit if the number of set bits is higher. This causes an decrease in the amount of cycles taken for me to run the program app1.
@@ -132,21 +132,45 @@ As the amount of bits per cache line increase, the locality of running program g
 
 \section{Interesting hand generated trace}
 
-We have added a trace test to the submission. What is interesting about this trace? 
+We have added a trace test to the submission. What is interesting about this trace? \\
 
-This trace is a small trace which gives different outputs for both the versions of our assignment submissions, even though running for the same amount of cycles.
+This trace is a small trace which gives different outputs for both the versions of our assignment submissions, even though running for the same amount of cycles.\\
 
-Secondly it features false sharing heavily, and we can see its effects.
+Secondly it features false sharing heavily, and we can see its effects.\\
 
-Thirdly we can see the graph given by it on varying the number of bytes per cache line which is very interesting to see as well.
+Thirdly we can see the graph given by it on varying the number of bytes per cache line which is very interesting to see as well.\\
+
+\subsection{Interesting behaviour comparing the two versions:}
+In the version where processes like cache to cache transfer and cache writebacks go on without halting the sender, this trace gave an interesting output where in everything relating to cache 1 finished before cache 0 finished its instructions.\\
+Lets analyse this for both versions: \\
+In the 0th cycle, all caches miss and send the an RdX request to the bus. This leads to cache 0 winning this request, and all the other caches halting, till cycle 100.\\
+In cycle 100, as the cache 0 gets back the cache line it wanted, it issues a write hit and sets its copy to M. In this cycle it does not send any request to the bus, and the bus being free, gets taken hold of by cache number 1, which sees that cache 0 has an M copy of the cache line that it wants. \\
+Here's where it diverges:
+In the case where the cache does not stall when serving someone else's requests: \\
+Hence, now cache 0 sends back this block to the memory, invalidating it inside of itself and causing a read miss on the next cycle of its own execution, cuing up its own request to the bus. This is a prime example of false sharing. Now cache number 1 has control of the bus for the next 200 cycles, firstly to get cache 0 to deposit its memory to main memory and then get the block back from main memory for cache 1.
+When this instruction for the cache 1 finishes up, cache 0 already has a bus transaction waiting while the cache 1 goes ahead and performs a hit on the retrieved block. The bus transaction starts requesting block 1 for its modified copy to read, and hence block 1 has to set its copy of the block to S. Thus when in the next cycle there is a read hit on cache 1, thus ending all its instructions before the instructions of cache 0 complete.\\
+Thus the cache 0 goes and completes it's second instruction, performs a read hit.\\
+\\
+In the case where the cache does stall when serving someone else's requests:\\
+Now cache 0 cannot run its second instruction as it has to send its memory block to the main memory and we are supposed to halt for it in this implementation. So the cache 1 completes its bus transaction in 200 cycles.\\
+Now once it's done, cache 0 gets to run its own read instruction and sends a read miss request to the bus which then accepts and starts processing it. This has a hit on cache 1 where the line has been modified, so a cache 1 to memory transfer occurs, after which a cache 1 to cache 0 transfer occurs. This whole while cache 1 is blocked not able to access its own last instruction.\\
+Once the bus transaction is done, on cycle number 416, both the caches are finally able to process their reads, which are both hits, and thus they end their execution on the same cycle, providing the other caches with the cache block later on, but ending their own instructions here.\\
+\\
+\\
+
+\subsection{Interesting behaviour on varying b}
 
 
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.7\textwidth]{plot_vary_b1.png}
+  \caption{Varying line size bits on the interesting trace}
+  \label{fig:arch}
+\end{figure}
 
-
-
-
-
-
+Contrary to what we had seen earlier in the report, here increasing the amount of line size bits increased the amount of cycles for the program to run.\\
+The reason: False sharing.\\
+False sharing being on the higher side actually incentivizes us to use lower amount of line size bits as that removes the conflicts that exist between any 2 caches. Thus in the case where the cacheline is just one word long, the trace runs much faster, almost in half the time, as the reads in all the files can occur immediately after the writes as there is no false sharing between them.\\
 
 
 

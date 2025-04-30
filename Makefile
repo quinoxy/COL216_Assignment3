@@ -10,7 +10,11 @@ L1simulate: $(OBJS)
 src/%.o: src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+report:
+	pdflatex report.tex
+
 clean:
 	rm -f L1simulate $(OBJS)
+	rm -f report.aux report.log report.out report.pdf
 
 .PHONY: clean
