@@ -104,7 +104,7 @@ public:
     unsigned totalTraffic;
     bool currentOpIsEviction;
     busTransaction currentProcessing;
-    int busOwner;
+    unsigned busOwner;
     cacheLineLabel typeOfNewLine;
     bool ifEvictingOrTransferringSelfStall;
 

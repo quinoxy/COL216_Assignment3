@@ -313,10 +313,7 @@ void bus::runForACycle()
                         }
                     }
                 }
-                if (busOwner < 0 || busOwner >= 4 || cachePtrs[busOwner] == nullptr) {
-                    std::cerr << "Error: Invalid busOwner or uninitialized cache pointer. busOwner=" << busOwner << "\n";
-                    exit(1);
-                }
+                
                 unsigned tag = currentProcessing.value >> cachePtrs[busOwner]->lineSizeBits;
                 unsigned setIndex = (currentProcessing.value >> cachePtrs[busOwner]->lineSizeBits) & (cachePtrs[busOwner]->setCount - 1);
                 cacheSet &currentSet = cachePtrs[busOwner]->sets[setIndex];
