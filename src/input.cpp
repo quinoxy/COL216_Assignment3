@@ -33,6 +33,11 @@ InputParser::InputParser(int argc, char *argv[])
         else if (arg == "-o" && i + 1 < argc)
         {
             outputFileName = argv[++i];
+            std::ofstream outfile(outputFileName);
+            if (!outfile.is_open()){
+                throw std::runtime_error("Failed to open output file: " + outputFileName);
+            }
+            outfile.close();
         }
         else if (arg == "-t" && i + 1 < argc)
         {

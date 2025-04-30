@@ -3,6 +3,7 @@
 #include "output.hpp"
 #include <iostream>
 #include <vector>
+#include <fstream>
 
 int main(int argc, char *argv[])
 {
@@ -70,19 +71,31 @@ int main(int argc, char *argv[])
             cycleCount++;
             //if(cnt==300)break;
         }
+        std::ofstream outputFile;
+        std::string outputFileName = parser.getOutputFileName();
+        if(outputFileName.empty()){
+            outputFileName = "/dev/stdout";
+        }
+        outputFile.open(outputFileName);
+        
+        if (!outputFile.is_open()){
+            std::cerr << "Error: Unable to open output file: " << outputFileName << "\n";
+            return 1;
+        }
 
         
 
         Output output;
 
-        output.printSimulationParameters(parser.applicationName, setBits, associativity, blockBits);
-        output.printCoreStatistics(caches);
-        output.printOverallBusSummary(busObj);
+        output.printSimulationParameters(outputFile,parser.applicationName, setBits, associativity, blockBits);
+        output.printCoreStatistics(outputFile,caches);
+        output.printOverallBusSummary(outputFile, busObj);
 
         if (true)
         {
             std::cout << "Simulation completed in " << cycleCount << " cycles.\n";
         }
+        outputFile.close();
     }
     catch (const std::exception &e)
     {
