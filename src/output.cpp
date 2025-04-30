@@ -3,7 +3,7 @@
 #include <cmath>
 #include <iomanip>
 
-void Output::printSimulationParameters(const std::string &tracePrefix, unsigned setBits, unsigned associativity, unsigned blockBits, const cache &cache)
+void Output::printSimulationParameters(const std::string &tracePrefix, unsigned setBits, unsigned associativity, unsigned blockBits)
 {
     unsigned blockSize = 1 << blockBits;
     unsigned numSets = 1 << setBits;
@@ -35,7 +35,7 @@ void Output::printCoreStatistics(const std::vector<cache> &cores)
         std::cout << "Total Execution Cycles: " << core.executionCycles << "\n";
         std::cout << "Idle Cycles: " << core.idleCycles << "\n";
         std::cout << "Cache Misses: " << core.misses << "\n";
-        std::cout << "Cache Miss Rate: " << std::fixed << std::setprecision(2) << core.misses/core.instructions.size() << "%\n";
+        std::cout << "Cache Miss Rate: " << std::fixed << std::setprecision(2) << static_cast<double>(core.misses) * 100.0/core.instructions.size() << "%\n";
         std::cout << "Cache Evictions: " << core.evictions << "\n";
         std::cout << "Writebacks: " << core.writebacks << "\n";
         std::cout << "Bus Invalidations: " << core.invalidations << "\n";
@@ -43,18 +43,10 @@ void Output::printCoreStatistics(const std::vector<cache> &cores)
     }
 }
 
-void Output::printOverallBusSummary(const std::vector<cache> &cores)
+void Output::printOverallBusSummary(const bus &inputBus)
 {
-    unsigned totalBusTransactions = 0;
-    unsigned totalBusTraffic = 0;
-
-    for (const cache &core : cores)
-    {
-        totalBusTransactions += core.getBusTransactions();
-        totalBusTraffic += core.getTrafficBytes();
-    }
 
     std::cout << "Overall Bus Summary:\n";
-    std::cout << "Total Bus Transactions: " << totalBusTransactions << "\n";
-    std::cout << "Total Bus Traffic (Bytes): " << totalBusTraffic << "\n";
+    std::cout << "Total Bus Transactions: " << inputBus.totalTransactions << "\n";
+    std::cout << "Total Bus Traffic (Bytes): " << inputBus.totalTraffic << "\n";
 }

@@ -1,5 +1,6 @@
 #include "input.hpp"
 #include "cache.hpp"
+#include "output.hpp"
 #include <iostream>
 #include <vector>
 
@@ -39,7 +40,7 @@ int main(int argc, char *argv[])
         while (!allCachesCompleted)
         {
             std::cout << "";
-            if (DEBUG)
+            if (true)
             {
                 std::cout << "Cycle " << cycleCount << ":\n";
             }
@@ -54,6 +55,9 @@ int main(int argc, char *argv[])
                 }
             }
             // Run bus for a cycle
+            if(busObj.cyclesBusy!=0){
+                allCachesCompleted = false;
+            }
 
             if (allCachesCompleted)
             {
@@ -67,14 +71,22 @@ int main(int argc, char *argv[])
             // if(cnt==150)break;
         }
 
-        if (DEBUG)
+        
+
+        Output output;
+
+        output.printSimulationParameters(parser.applicationName, setBits, associativity, blockBits);
+        output.printCoreStatistics(caches);
+        output.printOverallBusSummary(busObj);
+
+        if (true)
         {
             std::cout << "Simulation completed in " << cycleCount << " cycles.\n";
         }
     }
     catch (const std::exception &e)
     {
-        if (DEBUG)
+        if (true)
         {
             std::cerr << "Error: " << e.what() << "\n";
         }

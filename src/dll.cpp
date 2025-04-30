@@ -19,7 +19,6 @@ void doublyLinkedList::deleteNode(Node *node)
 {
     node->prev->next = node->next;
     node->next->prev = node->prev;
-    delete node;
 }
 
 doublyLinkedList::Node::Node(unsigned value) : data(value), next(nullptr), prev(nullptr) {}

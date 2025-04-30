@@ -48,6 +48,7 @@ InputParser::InputParser(int argc, char *argv[])
             {
                 traceFiles.push_back(appName + "_proc" + std::to_string(core) + ".trace");
             }
+            applicationName = appName;
         }
         else
         {

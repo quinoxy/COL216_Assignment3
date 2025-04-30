@@ -68,6 +68,10 @@ cacheLine cacheSet::addTag(unsigned tag, cacheLineLabel s)
             lines[i].tag = tag;
             lines[i].state = s;
 
+            if (mapForLRU.count(initialLine.tag)) {
+                delete mapForLRU[initialLine.tag];
+                mapForLRU.erase(initialLine.tag);
+            }
             mapForLRU[tag] = new doublyLinkedList::Node(i);
             LRUMem.insertAtHead(mapForLRU[tag]);
             return initialLine;
@@ -85,6 +89,8 @@ cacheLine cacheSet::addTag(unsigned tag, cacheLineLabel s)
 
     mapForLRU[tag] = new doublyLinkedList::Node(i);
     LRUMem.insertAtHead(mapForLRU[tag]);
+
+    delete toBeDeleted;
 
     if (DEBUG)
     {
@@ -159,6 +165,7 @@ void cache::processInst()
         {
             if (!miss && !isWrite)
             {
+                readInstrs++;
                 PC++;
                 return;
             }
@@ -182,11 +189,14 @@ void cache::processInst()
             }
             else if (miss && !isWrite)
             {
+                readInstrs++;
+                misses++;
                 fromCacheToBus = {busTransactionType::Rd, address};
                 isHalted = true;
             }
             else if (miss && isWrite)
             {
+                misses++;
                 fromCacheToBus = {busTransactionType::RdX, address};
                 isHalted = true;
             }
@@ -207,7 +217,7 @@ void cache::processInst()
                 }
                 else if (linePtr->state == S)
                 {
-                    if (DEBUG)
+                    if (true)
                     {
                         std::cout << "There is a major error... Exiting...." << std::endl;
                     }
@@ -220,7 +230,7 @@ void cache::processInst()
             }
             else if (miss)
             {
-                if (DEBUG)
+                if (true)
                 {
                     std::cout << "There is a major error... Exiting...." << std::endl;
                 }
@@ -249,10 +259,18 @@ std::pair<bool, cacheLine> cache::processSnoop(busTransaction trs)
     else if (trs.type == busTransactionType::RdX)
     {
         linePtr->state = I;
+        doublyLinkedList::Node* invalidatedNode = currentSet.mapForLRU[tag];
+        currentSet.LRUMem.deleteNode(invalidatedNode);
+        currentSet.mapForLRU.erase(tag);
+        delete invalidatedNode;
     }
     else if (trs.type == busTransactionType::WriteInvalidate)
     {
         linePtr->state = I;
+        doublyLinkedList::Node* invalidatedNode = currentSet.mapForLRU[tag];
+        currentSet.LRUMem.deleteNode(invalidatedNode);
+        currentSet.mapForLRU.erase(tag);
+        delete invalidatedNode;
     }
     return {true, ret};
 }
@@ -327,6 +345,10 @@ void bus::runForACycle()
                     to = 4;
                     currentOpIsEviction = true;
                     cyclesBusy = 100;
+                    cachePtrs[busOwner]->writebacks++;
+                    cachePtrs[busOwner]->evictions++;
+                    totalTraffic += 1 << cachePtrs[busOwner]->lineSizeBits;
+                    cachePtrs[busOwner]->byteTraffic += 1 << cachePtrs[busOwner]->lineSizeBits;
                     if (!ifEvictingOrTransferringSelfStall)
                     {
                         cachePtrs[busOwner]->isHalted = false;
@@ -338,6 +360,9 @@ void bus::runForACycle()
                     if (DEBUG)
                     {
                         std::cout << "Transaction completed without eviction." << std::endl;
+                    }
+                    if(result.state!=I){
+                        cachePtrs[busOwner] -> evictions++;
                     }
                     transactionOver();
                 }
@@ -384,6 +409,11 @@ void bus::runForACycle()
                     to = 4;
                     currentOpIsEviction = true;
                     cyclesBusy = 100;
+                    cachePtrs[busOwner] ->writebacks++;
+                    cachePtrs[busOwner] ->evictions++;
+                    totalTraffic += 1 << cachePtrs[busOwner]->lineSizeBits;
+                    cachePtrs[busOwner]->byteTraffic += 1 << cachePtrs[busOwner]->lineSizeBits;
+
                     if (!ifEvictingOrTransferringSelfStall)
                     {
                         cachePtrs[busOwner]->isHalted = false;
@@ -395,6 +425,9 @@ void bus::runForACycle()
                     if (DEBUG)
                     {
                         std::cout << "Transaction completed without eviction." << std::endl;
+                    }
+                    if(result.state!=I){
+                        cachePtrs[busOwner]->evictions++;
                     }
                     transactionOver();
                 }
@@ -471,7 +504,8 @@ void bus::runForACycle()
         return;
     }
     else if (transaction.type == busTransactionType::WriteInvalidate)
-    {
+    {   
+        totalTransactions++;
         if (DEBUG)
         {
             std::cout << "Processing WriteInvalidate transaction." << std::endl;
@@ -483,12 +517,14 @@ void bus::runForACycle()
                 cachePtrs[cacheNumber]->processSnoop(transaction);
             }
         }
+        cachePtrs[owner] -> invalidations++;
         cachePtrs[owner]->isHalted = false;
         cachePtrs[owner]->fromCacheToBus = {busTransactionType::None, 0};
         cachePtrs[owner]->PC++;
     }
     else if (transaction.type == busTransactionType::Rd)
-    {
+    {   
+        totalTransactions++;
         if (DEBUG)
         {
             std::cout << "Processing Rd transaction." << std::endl;
@@ -528,6 +564,8 @@ void bus::runForACycle()
             to = owner;
             cyclesBusy = 100;
             typeOfNewLine = E;
+            totalTraffic += 1 << cachePtrs[owner]->lineSizeBits;
+            cachePtrs[owner]->byteTraffic += 1 << cachePtrs[owner]->lineSizeBits;
         }
         else if (caseReadMiss == M)
         {
@@ -541,6 +579,9 @@ void bus::runForACycle()
             to = 4;
             cyclesBusy = 100;
             typeOfNewLine = S;
+            totalTraffic += 2 * (1 << cachePtrs[owner]->lineSizeBits);
+            cachePtrs[owner]->byteTraffic += 1 << cachePtrs[owner]->lineSizeBits;
+            cachePtrs[sender]->byteTraffic += 1 << cachePtrs[owner]->lineSizeBits;
         }
         else
         {
@@ -553,11 +594,15 @@ void bus::runForACycle()
             from = sender;
             to = owner;
             cyclesBusy = 2 * (1 << cachePtrs[sender]->lineSizeBits);
+            totalTraffic += 1 << cachePtrs[owner]->lineSizeBits;
             typeOfNewLine = S;
+            cachePtrs[owner]->byteTraffic += 1 << cachePtrs[owner]->lineSizeBits;
+            cachePtrs[sender]->byteTraffic += 1 << cachePtrs[owner]->lineSizeBits;
         }
     }
     else if (transaction.type == busTransactionType::RdX)
     {
+        totalTransactions++;
         if (DEBUG)
         {
             std::cout << "Processing RdX transaction." << std::endl;
@@ -597,6 +642,8 @@ void bus::runForACycle()
             to = owner;
             cyclesBusy = 100;
             typeOfNewLine = E;
+            totalTraffic += 1 << cachePtrs[owner]->lineSizeBits;
+            cachePtrs[owner]->byteTraffic += 1 << cachePtrs[owner]->lineSizeBits;
         }
         else
         {
@@ -610,7 +657,11 @@ void bus::runForACycle()
             to = 4;
             cyclesBusy = 100;
             typeOfNewLine = E;
+            totalTraffic += 2 * (1 << cachePtrs[owner]->lineSizeBits);
+            cachePtrs[owner]->byteTraffic += 1 << cachePtrs[owner]->lineSizeBits;
+            cachePtrs[sender]->byteTraffic += 1 << cachePtrs[owner]->lineSizeBits;
         }
+        cachePtrs[owner] -> invalidations++;
     }
 }
 
