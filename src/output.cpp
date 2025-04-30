@@ -32,7 +32,7 @@ void Output::printCoreStatistics(const std::vector<cache> &cores)
         std::cout << "Total Instructions: " << core.instructions.size() << "\n";
         std::cout << "Total Reads: " << core.readInstrs << "\n";
         std::cout << "Total Writes: " << core.instructions.size() - core.readInstrs << "\n";
-        std::cout << "Total Execution Cycles: " << core.executionCycles << "\n";
+        std::cout << "Total Execution Cycles: " << core.ranForCycles - core.idleCycles << "\n";
         std::cout << "Idle Cycles: " << core.idleCycles << "\n";
         std::cout << "Cache Misses: " << core.misses << "\n";
         std::cout << "Cache Miss Rate: " << std::fixed << std::setprecision(2) << static_cast<double>(core.misses) * 100.0/core.instructions.size() << "%\n";

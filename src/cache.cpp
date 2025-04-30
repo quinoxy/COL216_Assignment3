@@ -100,7 +100,7 @@ cacheLine cacheSet::addTag(unsigned tag, cacheLineLabel s)
 }
 
 cache::cache(unsigned lineSizeBits, unsigned associativity, unsigned setBits, std::vector<std::pair<std::pair<unsigned int, bool>, bool>> instructions)
-    : setCount(1 << setBits), lineSizeBits(lineSizeBits), associativity(associativity), setBits(setBits), instructions(instructions), isHalted(false), PC(0), readInstrs(0), executionCycles(0), idleCycles(0), misses(0), evictions(0), writebacks(0), invalidations(0), byteTraffic(0), arrivedMemBuffer(0), memArrivedInCycle(false), sendMemBuffer(0)
+    : setCount(1 << setBits), lineSizeBits(lineSizeBits), associativity(associativity), setBits(setBits), instructions(instructions), isHalted(false), PC(0), readInstrs(0), executionCycles(0), idleCycles(0), misses(0), evictions(0), writebacks(0), invalidations(0), byteTraffic(0), arrivedMemBuffer(0), memArrivedInCycle(false), sendMemBuffer(0), ranForCycles(0)
 {
     if (DEBUG)
     {
@@ -124,6 +124,7 @@ void cache::processInst()
         }
         return;
     }
+    ranForCycles ++;
     if (!isHalted)
     {
         auto instruction = instructions[PC];
@@ -263,6 +264,16 @@ std::pair<bool, cacheLine> cache::processSnoop(busTransaction trs)
         currentSet.LRUMem.deleteNode(invalidatedNode);
         currentSet.mapForLRU.erase(tag);
         delete invalidatedNode;
+
+        if (tag == fromCacheToBus.value>>lineSizeBits && fromCacheToBus.type == busTransactionType::WriteInvalidate){
+            auto instruction = instructions[PC];
+            bool isWrite = instruction.first.second;
+            instructions[PC].second = true;
+            if(!isWrite) readInstrs--;
+            isHalted = false;
+            fromCacheToBus = {busTransactionType::None, 0};
+
+        }
     }
     else if (trs.type == busTransactionType::WriteInvalidate)
     {
@@ -271,6 +282,16 @@ std::pair<bool, cacheLine> cache::processSnoop(busTransaction trs)
         currentSet.LRUMem.deleteNode(invalidatedNode);
         currentSet.mapForLRU.erase(tag);
         delete invalidatedNode;
+
+        if (tag == fromCacheToBus.value>>lineSizeBits && fromCacheToBus.type == busTransactionType::WriteInvalidate){
+            auto instruction = instructions[PC];
+            bool isWrite = instruction.first.second;
+            instructions[PC].second = true;
+            if(!isWrite) readInstrs--;
+            isHalted = false;
+            fromCacheToBus = {busTransactionType::None, 0};
+
+        }
     }
     return {true, ret};
 }
@@ -292,6 +313,7 @@ void bus::runForACycle()
     if (DEBUG)
     {
         std::cout << "Running bus for a cycle. Cycles busy: " << cyclesBusy << std::endl;
+
     }
 
     if (cyclesBusy > 1)
@@ -471,6 +493,14 @@ void bus::runForACycle()
         {
             std::cout << "Bus is still busy. Exiting cycle." << std::endl;
         }
+        for(unsigned cache = 0; cache < 4; cache++)
+        {
+            if (cachePtrs[cache] -> fromCacheToBus.type != busTransactionType::None && cache!=busOwner && cachePtrs[cache]->PC < cachePtrs[cache]->instructions.size())
+            {
+                cachePtrs[cache] -> idleCycles ++;
+            }
+        }
+
         return;
     }
 
@@ -493,6 +523,15 @@ void bus::runForACycle()
                 std::cout << "Transaction found from cache " << cacheNumber << ": type=" << transaction.type << ", value=" << transaction.value << std::endl;
             }
             break;
+        }
+    }
+    if (transaction.type!=busTransactionType::None){
+        for(unsigned cache = 0; cache < 4; cache++)
+        {
+            if (cachePtrs[cache] -> fromCacheToBus.type != busTransactionType::None && cache!=owner && cachePtrs[cache]->PC < cachePtrs[cache]->instructions.size())
+            {
+                cachePtrs[cache] -> idleCycles ++;
+            }
         }
     }
     if (transaction.type == busTransactionType::None)
