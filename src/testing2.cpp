@@ -1,5 +1,6 @@
 #include "input.hpp"
 #include "cache.hpp"
+#include "output.hpp"
 #include <iostream>
 #include <vector>
 
@@ -71,6 +72,19 @@ int main(int argc, char *argv[])
         {
             std::cout << "Simulation completed in " << cycleCount << " cycles.\n";
         }
+    
+
+    // Print simulation results
+    std::cout << "Simulation completed in " << cycleCount << " cycles.\n";
+
+    // Print simulation parameters
+    Output::printSimulationParameters(setBits, associativity, blockBits, parser.getPrefix());
+
+    // Print core statistics
+    Output::printCoreStatistics(caches);
+
+    // Print overall bus summary
+    Output::printOverallBusSummary(busObj);
     }
     catch (const std::exception &e)
     {

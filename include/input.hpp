@@ -15,6 +15,7 @@ public:
     unsigned getAssociativity() const;
     unsigned getLineSizeBits() const;
     unsigned getSetBits() const;
+    std::string getPrefix() const;
     std::string getOutputFileName() const;
     std::vector<std::string> getTraceFiles() const;
 

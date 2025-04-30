@@ -3,7 +3,7 @@
 #include <cmath>
 #include <iomanip>
 
-void Output::printSimulationParameters(const std::string &tracePrefix, unsigned setBits, unsigned associativity, unsigned blockBits, const cache &cache)
+void Output::printSimulationParameters(unsigned setBits, unsigned associativity, unsigned blockBits, const std::string &tracePrefix)
 {
     unsigned blockSize = 1 << blockBits;
     unsigned numSets = 1 << setBits;

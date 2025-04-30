@@ -36,6 +36,7 @@ InputParser::InputParser(int argc, char *argv[])
         }
         else if (arg == "-t" && i + 1 < argc)
         {
+
             if (traceFileProvided)
             {
                 throw std::invalid_argument("Error: -t option can only be specified once.");
@@ -135,6 +136,11 @@ std::string InputParser::getOutputFileName() const
 std::vector<std::string> InputParser::getTraceFiles() const
 {
     return traceFiles;
+}
+
+std::string InputParser::getPrefix() const
+{
+    return traceFiles[0].substr(0, traceFiles[0].find_last_of('_'));
 }
 
 void InputParser::printHelp() const

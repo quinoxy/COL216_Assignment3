@@ -8,7 +8,7 @@
 class Output
 {
 public:
-    static void printSimulationParameters(const std::string &tracePrefix, unsigned setBits, unsigned associativity, unsigned blockBits, const cache &cache);
+    static void printSimulationParameters(unsigned setBits, unsigned associativity, unsigned blockBits, const std::string &tracePrefix);
     static void printCoreStatistics(const std::vector<cache> &cores);
     static void printOverallBusSummary(const bus &b);
 };
