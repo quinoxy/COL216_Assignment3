@@ -1,2 +1,7 @@
 *.trace*
 *.txt
+run_simulations.sh
+plot_results.py
+./outputs/*
+*.png
+

@@ -472,7 +472,7 @@ void bus::runForACycle()
                 {
                     if (cachePtrs[from]->fromCacheToBus.type == busTransactionType::None)
                     {
-                        cachePtrs[from]->isHalted = true;
+                        cachePtrs[from]->isHalted = false;
                     }
                 }
                 from = 4;
@@ -495,7 +495,7 @@ void bus::runForACycle()
         }
         for(unsigned cache = 0; cache < 4; cache++)
         {
-            if (cachePtrs[cache] -> fromCacheToBus.type != busTransactionType::None && cache!=busOwner && cachePtrs[cache]->PC < cachePtrs[cache]->instructions.size())
+            if ((cachePtrs[cache] -> fromCacheToBus.type != busTransactionType::None && cache!=busOwner && cachePtrs[cache]->PC < cachePtrs[cache]->instructions.size())||(cachePtrs[cache]->fromCacheToBus.type == busTransactionType::None && cache!=busOwner && cachePtrs[cache]->PC < cachePtrs[cache]->instructions.size() && cachePtrs[cache]->isHalted))
             {
                 cachePtrs[cache] -> idleCycles ++;
                 if (DEBUG) {
@@ -537,7 +537,7 @@ void bus::runForACycle()
     if (transaction.type!=busTransactionType::None){
         for(unsigned cache = 0; cache < 4; cache++)
         {
-            if (cachePtrs[cache] -> fromCacheToBus.type != busTransactionType::None && cache!=owner && cachePtrs[cache]->PC < cachePtrs[cache]->instructions.size())
+            if ((cachePtrs[cache] -> fromCacheToBus.type != busTransactionType::None && cache!=owner && cachePtrs[cache]->PC < cachePtrs[cache]->instructions.size())||(cachePtrs[cache]->fromCacheToBus.type == busTransactionType::None && cache!=owner && cachePtrs[cache]->PC < cachePtrs[cache]->instructions.size() && cachePtrs[cache]->isHalted))
             {
                 cachePtrs[cache] -> idleCycles ++;
                 if (DEBUG) {

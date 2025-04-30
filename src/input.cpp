@@ -5,7 +5,7 @@
 #include <stdexcept>
 
 InputParser::InputParser(int argc, char *argv[])
-    : associativity(2), lineSizeBits(5), setBits(6), outputFileName("output.txt")
+    : associativity(2), lineSizeBits(5), setBits(6), outputFileName("")
     // default values are s: 6, b: 5, E: 2
 {
     bool traceFileProvided = false;

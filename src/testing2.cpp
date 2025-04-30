@@ -71,25 +71,26 @@ int main(int argc, char *argv[])
             cycleCount++;
             //if(cnt==300)break;
         }
-        std::ofstream outputFile;
         std::string outputFileName = parser.getOutputFileName();
-        if(outputFileName.empty()){
-            outputFileName = "/dev/stdout";
-        }
-        outputFile.open(outputFileName);
-        
-        if (!outputFile.is_open()){
-            std::cerr << "Error: Unable to open output file: " << outputFileName << "\n";
-            return 1;
+        //std::cout << outputFileName << " is the output file" << std::endl;
+        std::ostream *outStream = nullptr;
+        std::ofstream outputFile;
+        if (outputFileName.empty()) {
+            outStream = &std::cout;
+        } else {
+            outputFile.open(outputFileName);
+            if (!outputFile.is_open()){
+                std::cerr << "Error: Unable to open output file: " << outputFileName << "\n";
+                return 1;
+            }
+            outStream = &outputFile;
         }
 
-        
-
+        // Now pass *outStream to your printing functions:
         Output output;
-
-        output.printSimulationParameters(outputFile,parser.applicationName, setBits, associativity, blockBits);
-        output.printCoreStatistics(outputFile,caches);
-        output.printOverallBusSummary(outputFile, busObj);
+        output.printSimulationParameters(*outStream, parser.applicationName, setBits, associativity, blockBits);
+        output.printCoreStatistics(*outStream, caches);
+        output.printOverallBusSummary(*outStream, busObj);
 
         if (true)
         {
