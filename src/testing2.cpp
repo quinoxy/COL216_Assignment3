@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
         while (!allCachesCompleted)
         {
             std::cout << "";
-            if (true)
+            if (DEBUG)
             {
                 std::cout << "Cycle " << cycleCount << ":\n";
             }

@@ -7,12 +7,12 @@ const unsigned DEFAULT_LINE_SIZE = 64;
 const unsigned DEFAULT_LINE_SIZE_BITS = 6;
 const unsigned DEFAULT_SETS_PER_CACHE = 64;
 const unsigned DEFAULT_SET_BITS = 6;
-const bool IF_EVICT_OR_TRANSFER_STALL = false;
-const bool DEBUG = true;
+const bool IF_EVICT_OR_TRANSFER_STALL = true;
+const bool DEBUG = false;
 
-cacheLine::cacheLine(unsigned s) : tag(0), state(I), size_bits(s) {}
+cacheLine::cacheLine(unsigned s) : tag(0), state(I), size_bits(s), lastAccessedCycle(0){}
 
-cacheSet::cacheSet(unsigned cacheLinesPerSet, unsigned lineSizeBits) : lineCount(cacheLinesPerSet), lineSizeBits(lineSizeBits), currentCapacity(0), LRUMem()
+cacheSet::cacheSet(unsigned cacheLinesPerSet, unsigned lineSizeBits) : lineCount(cacheLinesPerSet), lineSizeBits(lineSizeBits), currentCapacity(0)
 {
     if (DEBUG)
     {
@@ -24,80 +24,50 @@ cacheSet::cacheSet(unsigned cacheLinesPerSet, unsigned lineSizeBits) : lineCount
     }
 }
 
-std::pair<bool, cacheLine *> cacheSet::isMiss(unsigned tag, bool LRUUpdate)
-{
-    if (DEBUG)
-    {
-        std::cout << "Checking for tag " << tag << " in cacheSet" << std::endl;
-    }
-    for (auto &line : lines)
-    {
-        if (line.tag == tag && line.state != I)
-        {
-            if (DEBUG)
-            {
-                std::cout << "Cache hit for tag " << tag << std::endl;
+std::pair<bool, cacheLine *> cacheSet::isMiss(unsigned tag, bool LRUUpdate, unsigned currentCycle) {
+    for (auto& line : lines) {
+        if (line.tag == tag && line.state != I) {
+            if (LRUUpdate) {
+                line.lastAccessedCycle = currentCycle;
             }
-            if (LRUUpdate)
-            {
-                doublyLinkedList::Node *newNode = mapForLRU[tag];
-                LRUMem.deleteNode(newNode);
-                LRUMem.insertAtHead(newNode);
-            }
-            return {false, &line};
+            return {false, &line}; // HIT
         }
     }
-    if (DEBUG)
-    {
-        std::cout << "Cache miss for tag " << tag << std::endl;
-    }
-    return {true, nullptr};
+    return {true, nullptr}; // MISS
 }
 
-cacheLine cacheSet::addTag(unsigned tag, cacheLineLabel s)
-{
-    if (DEBUG)
-    {
-        std::cout << "Adding tag " << tag << " with state " << s << " to cacheSet" << std::endl;
-    }
-    for (size_t i = 0; i < lines.size(); ++i)
-    {
-        if (lines[i].state == I)
-        {
-            cacheLine initialLine = lines[i];
-            lines[i].tag = tag;
-            lines[i].state = s;
 
-            if (mapForLRU.count(initialLine.tag)) {
-                delete mapForLRU[initialLine.tag];
-                mapForLRU.erase(initialLine.tag);
-            }
-            mapForLRU[tag] = new doublyLinkedList::Node(i);
-            LRUMem.insertAtHead(mapForLRU[tag]);
-            return initialLine;
+cacheLine cacheSet::addTag(unsigned tag, cacheLineLabel s, unsigned currentCycle) {
+    cacheLine newLine(lineSizeBits);
+    newLine.tag = tag;
+    newLine.state = s;
+    newLine.lastAccessedCycle = currentCycle;
+
+    // First try to find an invalid line to reuse
+    for (unsigned i = 0; i < lineCount; ++i) {
+        if (lines[i].state == I) {
+            cacheLine evicted = lines[i];
+            lines[i] = newLine;
+            return evicted;  // No eviction
         }
     }
 
-    doublyLinkedList::Node *toBeDeleted = LRUMem.tail->prev;
-    cacheLine toBeDeletedLine = lines[toBeDeleted->data];
-    mapForLRU.erase(lines[toBeDeleted->data].tag);
-    LRUMem.deleteNode(toBeDeleted);
+    // All lines valid — find LRU (least recently used)
+    unsigned lruIndex = 0;
+    unsigned minCycle = lines[0].lastAccessedCycle;
 
-    unsigned i = toBeDeleted->data;
-    lines[i].tag = tag;
-    lines[i].state = s;
-
-    mapForLRU[tag] = new doublyLinkedList::Node(i);
-    LRUMem.insertAtHead(mapForLRU[tag]);
-
-    delete toBeDeleted;
-
-    if (DEBUG)
-    {
-        std::cout << "Evicted line with tag " << toBeDeletedLine.tag << " to add new tag " << tag << std::endl;
+    for (unsigned i = 1; i < lineCount; ++i) {
+        if (lines[i].lastAccessedCycle < minCycle) {
+            minCycle = lines[i].lastAccessedCycle;
+            lruIndex = i;
+        }
     }
-    return toBeDeletedLine;
+
+    cacheLine evicted = lines[lruIndex];
+    lines[lruIndex] = newLine;
+    return evicted;
 }
+
 
 cache::cache(unsigned lineSizeBits, unsigned associativity, unsigned setBits, std::vector<std::pair<std::pair<unsigned int, bool>, bool>> instructions)
     : setCount(1 << setBits), lineSizeBits(lineSizeBits), associativity(associativity), setBits(setBits), instructions(instructions), isHalted(false), PC(0), readInstrs(0), executionCycles(0), idleCycles(0), misses(0), evictions(0), writebacks(0), invalidations(0), byteTraffic(0), arrivedMemBuffer(0), memArrivedInCycle(false), sendMemBuffer(0), ranForCycles(0)
@@ -144,7 +114,7 @@ void cache::processInst()
         }
 
         bool miss = false;
-        auto [isMiss, linePtr] = currentSet.isMiss(tag, true);
+        auto [isMiss, linePtr] = currentSet.isMiss(tag, true, ranForCycles);
 
         if (isMiss)
         {
@@ -246,7 +216,7 @@ std::pair<bool, cacheLine> cache::processSnoop(busTransaction trs)
     unsigned tag = trs.value >> lineSizeBits;
     unsigned setIndex = (trs.value >> lineSizeBits) & (setCount - 1);
     cacheSet &currentSet = sets[setIndex];
-    auto [isMiss, linePtr] = currentSet.isMiss(tag, false);
+    auto [isMiss, linePtr] = currentSet.isMiss(tag, false, ranForCycles);
     if (isMiss)
     {
         return {false, cacheLine(0)};
@@ -260,10 +230,6 @@ std::pair<bool, cacheLine> cache::processSnoop(busTransaction trs)
     else if (trs.type == busTransactionType::RdX)
     {
         linePtr->state = I;
-        doublyLinkedList::Node* invalidatedNode = currentSet.mapForLRU[tag];
-        currentSet.LRUMem.deleteNode(invalidatedNode);
-        currentSet.mapForLRU.erase(tag);
-        delete invalidatedNode;
 
         if (tag == fromCacheToBus.value>>lineSizeBits && fromCacheToBus.type == busTransactionType::WriteInvalidate){
             auto instruction = instructions[PC];
@@ -278,10 +244,6 @@ std::pair<bool, cacheLine> cache::processSnoop(busTransaction trs)
     else if (trs.type == busTransactionType::WriteInvalidate)
     {
         linePtr->state = I;
-        doublyLinkedList::Node* invalidatedNode = currentSet.mapForLRU[tag];
-        currentSet.LRUMem.deleteNode(invalidatedNode);
-        currentSet.mapForLRU.erase(tag);
-        delete invalidatedNode;
 
         if (tag == fromCacheToBus.value>>lineSizeBits && fromCacheToBus.type == busTransactionType::WriteInvalidate){
             auto instruction = instructions[PC];
@@ -356,7 +318,7 @@ void bus::runForACycle()
                 unsigned tag = currentProcessing.value >> cachePtrs[busOwner]->lineSizeBits;
                 unsigned setIndex = (currentProcessing.value >> cachePtrs[busOwner]->lineSizeBits) & (cachePtrs[busOwner]->setCount - 1);
                 cacheSet &currentSet = cachePtrs[busOwner]->sets[setIndex];
-                cacheLine result = currentSet.addTag(tag, typeOfNewLine);
+                cacheLine result = currentSet.addTag(tag, typeOfNewLine, cachePtrs[busOwner]->ranForCycles);
                 if (result.state == M)
                 {
                     if (DEBUG)
@@ -420,7 +382,7 @@ void bus::runForACycle()
                 unsigned tag = currentProcessing.value >> cachePtrs[busOwner]->lineSizeBits;
                 unsigned setIndex = (currentProcessing.value >> cachePtrs[busOwner]->lineSizeBits) & (cachePtrs[busOwner]->setCount - 1);
                 cacheSet &currentSet = cachePtrs[busOwner]->sets[setIndex];
-                cacheLine result = currentSet.addTag(tag, typeOfNewLine);
+                cacheLine result = currentSet.addTag(tag, typeOfNewLine, cachePtrs[busOwner]->ranForCycles);
                 if (result.state == M)
                 {
                     if (DEBUG)

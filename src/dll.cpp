@@ -16,9 +16,9 @@ void doublyLinkedList::insertAtHead(Node *node)
 }
 
 void doublyLinkedList::deleteNode(Node *node)
-{
-    node->prev->next = node->next;
-    node->next->prev = node->prev;
+{   
+    if(node->prev!=nullptr) node->prev->next = node->next;
+    if(node->next!=nullptr) node->next->prev = node->prev;
 }
 
 doublyLinkedList::Node::Node(unsigned value) : data(value), next(nullptr), prev(nullptr) {}

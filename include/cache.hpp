@@ -41,6 +41,7 @@ private:
 public:
     unsigned tag;
     cacheLineLabel state;
+    unsigned lastAccessedCycle;
 
     cacheLine(unsigned s);
 };
@@ -53,13 +54,11 @@ class cacheSet
     unsigned lineSizeBits;
     unsigned currentCapacity;
 public:
-    doublyLinkedList LRUMem;
-    std::map<unsigned, doublyLinkedList::Node *> mapForLRU;
 
 
     cacheSet(unsigned cacheLinesPerSet = DEFAULT_CACHE_LINES_PER_SET, unsigned lineSizeBits = DEFAULT_LINE_SIZE_BITS);
-    std::pair<bool, cacheLine *> isMiss(unsigned tag, bool LRUUpdate);
-    cacheLine addTag(unsigned tag, cacheLineLabel s);
+    std::pair<bool, cacheLine *> isMiss(unsigned tag, bool LRUUpdate, unsigned currentCycle);
+    cacheLine addTag(unsigned tag, cacheLineLabel s, unsigned currentCycle);
 };
 
 class cache
