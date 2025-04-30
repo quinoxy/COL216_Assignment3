@@ -4,4 +4,6 @@ run_simulations.sh
 plot_results.py
 ./outputs/*
 *.png
+L1simulate
+src/*.o
 
