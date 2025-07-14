@@ -5,6 +5,11 @@
 #include <vector>
 #include <fstream>
 
+int testFunc(int input)
+{
+    return input+30;
+}
+
 int main(int argc, char *argv[])
 {
     try
@@ -38,9 +43,11 @@ int main(int argc, char *argv[])
         bool allCachesCompleted = false;
         unsigned cycleCount = 0;
         int cnt = 0;
+
         while (!allCachesCompleted)
         {
-            std::cout << "";
+            //std::cerr << "";
+
             if (DEBUG)
             {
                 std::cout << "Cycle " << cycleCount << ":\n";
@@ -67,36 +74,45 @@ int main(int argc, char *argv[])
                     std::cout << "All caches have completed their instructions." << std::endl;
                 }
             }
-
+            
             cycleCount++;
             //if(cnt==300)break;
+            //std::cout<<"last statement of while loop\n";
         }
+        std::cout<<"after the loop\n";
+
         std::string outputFileName = parser.getOutputFileName();
         //std::cout << outputFileName << " is the output file" << std::endl;
-        std::ostream *outStream = nullptr;
+        Output output;
         std::ofstream outputFile;
         if (outputFileName.empty()) {
-            outStream = &std::cout;
+            std::cerr<<"inside outputFilename.empty()\n";
+            output.printSimulationParameters(parser.applicationName, setBits, associativity, blockBits, std::cerr);
+            output.printCoreStatistics(caches, std::cerr);
+            output.printOverallBusSummary(busObj, std::cerr);
+            
         } else {
+            std::ofstream outputFile;
             outputFile.open(outputFileName);
             if (!outputFile.is_open()){
                 std::cerr << "Error: Unable to open output file: " << outputFileName << "\n";
                 return 1;
             }
-            outStream = &outputFile;
+            output.printSimulationParameters(parser.applicationName, setBits, associativity, blockBits, outputFile);
+            output.printCoreStatistics(caches, outputFile);
+            output.printOverallBusSummary(busObj, outputFile);
+            outputFile.close();
         }
 
         // Now pass *outStream to your printing functions:
-        Output output;
-        output.printSimulationParameters(*outStream, parser.applicationName, setBits, associativity, blockBits);
-        output.printCoreStatistics(*outStream, caches);
-        output.printOverallBusSummary(*outStream, busObj);
+        
+        
 
         if (true)
         {
             std::cout << "Simulation completed in " << cycleCount << " cycles.\n";
         }
-        outputFile.close();
+        
     }
     catch (const std::exception &e)
     {

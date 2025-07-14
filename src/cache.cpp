@@ -258,7 +258,7 @@ std::pair<bool, cacheLine> cache::processSnoop(busTransaction trs)
     return {true, ret};
 }
 
-bus::bus(cache *cachePtr0, cache *cachePtr1, cache *cachePtr2, cache *cachePtr3) : from(-1), to(-1), cyclesBusy(0), totalTransactions(0), totalTraffic(0), currentOpIsEviction(false), currentProcessing({busTransactionType::None, 0}), busOwner(-1), typeOfNewLine(I), ifEvictingOrTransferringSelfStall(IF_EVICT_OR_TRANSFER_STALL)
+bus::bus(cache *cachePtr0, cache *cachePtr1, cache *cachePtr2, cache *cachePtr3) : from(5), to(5), cyclesBusy(0), totalTransactions(0), totalTraffic(0), currentOpIsEviction(false), currentProcessing({busTransactionType::None, 0}), busOwner(5), typeOfNewLine(I), ifEvictingOrTransferringSelfStall(IF_EVICT_OR_TRANSFER_STALL)
 {
     if (DEBUG)
     {
@@ -480,7 +480,7 @@ void bus::runForACycle()
         std::cout << "Arbitrating for new transaction." << std::endl;
     }
     busTransaction transaction;
-    unsigned owner = -1;
+    unsigned owner = 5;
     for (unsigned cacheNumber = 0; cacheNumber < 4; cacheNumber++)
     {
         if (cachePtrs[cacheNumber]->fromCacheToBus.type != busTransactionType::None)
@@ -563,7 +563,7 @@ void bus::runForACycle()
             }
         }
         cacheLineLabel caseReadMiss = I;
-        unsigned sender = -1;
+        unsigned sender = 5;
         for (unsigned i = 0; i < 4; i++)
         {
             if (labels[i] != I)
@@ -641,7 +641,7 @@ void bus::runForACycle()
             }
         }
         cacheLineLabel caseWriteMiss = I;
-        unsigned sender = -1;
+        unsigned sender = 5;
         for (unsigned i = 0; i < 4; i++)
         {
             if (labels[i] != I)
@@ -695,9 +695,9 @@ void bus::transactionOver()
         cachePtrs[busOwner]->isHalted = false;
         cachePtrs[busOwner]->fromCacheToBus = {busTransactionType::None, 0};
     }
-    busOwner = -1;
-    from = -1;
-    to = -1;
+    busOwner = 5;
+    from = 5;
+    to = 5;
     currentOpIsEviction = false;
     typeOfNewLine = I;
     currentProcessing = {busTransactionType::None, 0};

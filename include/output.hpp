@@ -4,13 +4,14 @@
 #include "cache.hpp"
 #include <string>
 #include <vector>
+#include <iostream>
 
 class Output
 {
 public:
-    static void printSimulationParameters(std::ostream &out, const std::string &tracePrefix, unsigned setBits, unsigned associativity, unsigned blockBits);
-    static void printCoreStatistics(std::ostream &out, const std::vector<cache> &cores);
-    static void printOverallBusSummary(std::ostream &out, const bus &Bus);
+    static void printSimulationParameters(const std::string &tracePrefix, unsigned setBits, unsigned associativity, unsigned blockBits, std::ostream &out = std::cout);
+    static void printCoreStatistics(const std::vector<cache> &cores, std::ostream &out = std::cout);
+    static void printOverallBusSummary(const bus &Bus, std::ostream &out = std::cout);
 };
 
 #endif // OUTPUT_HPP

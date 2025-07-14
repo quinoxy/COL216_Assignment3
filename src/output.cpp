@@ -3,7 +3,7 @@
 #include <cmath>
 #include <iomanip>
 
-void Output::printSimulationParameters(std::ostream &out, const std::string &tracePrefix, unsigned setBits, unsigned associativity, unsigned blockBits)
+void Output::printSimulationParameters(const std::string &tracePrefix, unsigned setBits, unsigned associativity, unsigned blockBits, std::ostream &out)
 {
     unsigned blockSize = 1 << blockBits;
     unsigned numSets = 1 << setBits;
@@ -23,7 +23,7 @@ void Output::printSimulationParameters(std::ostream &out, const std::string &tra
     out << "Bus: Central snooping bus\n\n";
 }
 
-void Output::printCoreStatistics(std::ostream &out, const std::vector<cache> &cores)
+void Output::printCoreStatistics(const std::vector<cache> &cores, std::ostream &out)
 {
     for (size_t i = 0; i < cores.size(); ++i)
     {
@@ -43,7 +43,7 @@ void Output::printCoreStatistics(std::ostream &out, const std::vector<cache> &co
     }
 }
 
-void Output::printOverallBusSummary(std::ostream &out, const bus &inputBus)
+void Output::printOverallBusSummary(const bus &inputBus, std::ostream &out)
 {
 
     out << "Overall Bus Summary:\n";
